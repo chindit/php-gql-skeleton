@@ -2,15 +2,21 @@
 
 namespace Vertuoza\Repositories\Collaborators;
 
-use Vertuoza\Entities\Collaborators\CollaboratorEntity;
+use Overblog\DataLoader\DataLoader;
+use Overblog\PromiseAdapter\PromiseAdapterInterface;
+use React\Promise\Promise;
+use function React\Promise\resolve;
 use Vertuoza\Repositories\Collaborators\Models\CollaboratorMapper;
 use Vertuoza\Repositories\Collaborators\Models\CollaboratorModel;
 use Vertuoza\Repositories\Database\QueryBuilder;
 
 class CollaboratorRepository
 {
+	/** @var array<string, DataLoader> */
+	private array $loaders = [];
 	public function __construct(
-		private QueryBuilder $database
+		private QueryBuilder $database,
+		private PromiseAdapterInterface $promiseAdapter
 	) {
 	}
 
@@ -34,22 +40,28 @@ class CollaboratorRepository
 		return $collaborators;
 	}
 
-	public function findById(string $id, string $tenantId): ?CollaboratorEntity
+	public function findById(string $id, string $tenantId): Promise
 	{
-		$row = $this->database
-			->getConnection()
-			->table(CollaboratorModel::getTableName())
-			->where(CollaboratorModel::getPkColumnName(), $id)
-			->where(CollaboratorModel::getTenantColumnName(), $tenantId)
-			->whereNull('deleted_at')
-			->first();
+		if (!isset($this->loaders[$tenantId])) {
+			$this->loaders[$tenantId] = new DataLoader(function (array $ids) use ($tenantId) {
+				$rows = $this->database->getConnection()
+					->table(CollaboratorModel::getTableName())
+					->where(CollaboratorModel::getTenantColumnName(), $tenantId)
+					->whereNull('deleted_at')
+					->whereIn(CollaboratorModel::getPkColumnName(), $ids)
+					->get();
 
-		if (!$row) {
-			return null;
+				$entities = [];
+				foreach ($rows as $row) {
+					$entity = CollaboratorMapper::modelToEntity(CollaboratorModel::fromStdclass($row));
+					$entities[$entity->id] = $entity;
+				}
+
+				// DataLoader requires one result per key, in the same order, including missing keys.
+				return resolve(array_map(fn ($id) => $entities[$id] ?? null, $ids));
+			}, $this->promiseAdapter);
 		}
 
-		return CollaboratorMapper::modelToEntity(
-			CollaboratorModel::fromStdclass($row)
-		);
+		return $this->loaders[$tenantId]->load($id);
 	}
 }

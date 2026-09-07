@@ -40,6 +40,8 @@ CREATE TABLE `unit_type` (
   KEY `fk_unit_tenant_idx` (`tenant_id`),
   CONSTRAINT `fk_unit_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenant` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+ALTER TABLE unit_type ADD CONSTRAINT unit_type_tenant_label_unique UNIQUE (tenant_id, label);
+
 
 INSERT INTO `unit_type` (`id`, `tenant_id`, `label`) VALUES ('4c2241c9-841f-44c9-9a51-18cfd8f37890', '112c33ae-3dbe-431b-994d-fffffe6fd49b', 'Meter');
 

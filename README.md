@@ -78,3 +78,7 @@ mutation {
 ```
 > [!WARNING]
 > Name must be between 1 and 250 chars
+> Names are trimmed and must be unique within the same tenant, using the database
+collation for comparison. Different tenants may use the same name. A soft-deleted
+unit keeps its name reserved. System units do not prevent a tenant from using that
+name.

@@ -50,7 +50,7 @@ class GqlErrorHandler
 
         $fields = null;
         if ($previous instanceof BadUserInputException) {
-          $fieldErrors = array_merge($args, $previous->getFieldsError());
+          $fieldErrors = $previous->getFieldsError();
           $fields = array_map(function ($fieldError) {
             return $fieldError->toArray();
           }, $fieldErrors);

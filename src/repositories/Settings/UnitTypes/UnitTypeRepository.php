@@ -2,6 +2,7 @@
 
 namespace Vertuoza\Repositories\Settings\UnitTypes;
 
+use Illuminate\Database\QueryException;
 use Overblog\DataLoader\DataLoader;
 use Overblog\PromiseAdapter\PromiseAdapterInterface;
 use React\Promise\Promise;
@@ -112,10 +113,10 @@ class UnitTypeRepository
     )();
   }
 
-	public function create(
-		UnitTypeMutationData $data,
-		string $tenantId
-	): string {
+	public function create(UnitTypeMutationData $data, string $tenantId): string
+	{
+		$connection = $this->db->getConnection();
+
 		/**
 		 * WARNING: MYSQL's lastInsertId returns the last auto_incremented id, NOT the last id generated.
 		 * Using default command will return 0 becaus no auto_increment was used. Therefore, there is no
@@ -123,16 +124,25 @@ class UnitTypeRepository
 		 *
 		 * To avoid this, we pre-generate an UUID and use it as the primary key.
 		 */
-		$result = $this->db
-			->getConnection()
-			->selectOne('SELECT UUID() AS id');
-
-		$id = $result->id;
-
+		$id = $connection->selectOne('SELECT UUID() AS id')->id;
 		$values = UnitTypeMapper::serializeCreate($data, $tenantId);
 		$values['id'] = $id;
 
-		$this->getQueryBuilder()->insert($values);
+		try {
+			$this->getQueryBuilder()->insert($values);
+		} catch (QueryException $exception) {
+			$isDuplicateName = (int) ($exception->errorInfo[1] ?? 0) === 1062
+				&& str_contains($exception->getMessage(), 'unit_type_tenant_label_unique');
+
+			if ($isDuplicateName) {
+				throw new DuplicateUnitTypeNameException(
+					'A unit type with this name already exists.',
+					previous: $exception
+				);
+			}
+
+			throw $exception;
+		}
 
 		return $id;
 	}
