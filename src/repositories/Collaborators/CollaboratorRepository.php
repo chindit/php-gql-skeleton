@@ -6,6 +6,7 @@ use Overblog\DataLoader\DataLoader;
 use Overblog\PromiseAdapter\PromiseAdapterInterface;
 use React\Promise\Promise;
 use function React\Promise\resolve;
+use function React\Async\async;
 use Vertuoza\Repositories\Collaborators\Models\CollaboratorMapper;
 use Vertuoza\Repositories\Collaborators\Models\CollaboratorModel;
 use Vertuoza\Repositories\Database\QueryBuilder;
@@ -20,24 +21,19 @@ class CollaboratorRepository
 	) {
 	}
 
-	public function findMany(string $tenantId): array
+	public function findMany(string $tenantId): Promise
 	{
-		$rows = $this->database
-			->getConnection()
-			->table(CollaboratorModel::getTableName())
-			->where(CollaboratorModel::getTenantColumnName(), $tenantId)
-			->whereNull('deleted_at')
-			->get();
-
-		$collaborators = [];
-
-		foreach ($rows as $row) {
-			$collaborators[] = CollaboratorMapper::modelToEntity(
-				CollaboratorModel::fromStdclass($row)
-			);
-		}
-
-		return $collaborators;
+		return async(
+			fn () => $this->database
+				->getConnection()
+				->table(CollaboratorModel::getTableName())
+				->where(CollaboratorModel::getTenantColumnName(), $tenantId)
+				->whereNull('deleted_at')
+				->get()
+				->map(fn ($row) => CollaboratorMapper::modelToEntity(
+					CollaboratorModel::fromStdclass($row)
+				))
+		)();
 	}
 
 	public function findById(string $id, string $tenantId): Promise

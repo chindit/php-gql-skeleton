@@ -2,10 +2,11 @@
 
 namespace Vertuoza\Usecases\Collaborators;
 
+use React\Promise\Promise;
 use Vertuoza\Api\Graphql\Context\UserRequestContext;
 use Vertuoza\Repositories\Collaborators\CollaboratorRepository;
 
-class CollaboratorsFindManyUseCase
+readonly class CollaboratorsFindManyUseCase
 {
 	public function __construct(
 		private CollaboratorRepository $repository,
@@ -13,7 +14,7 @@ class CollaboratorsFindManyUseCase
 	) {
 	}
 
-	public function handle(): array
+	public function handle(): Promise
 	{
 		$tenantId = $this->userContext->getTenantId();
 

@@ -8,7 +8,7 @@ use Vertuoza\Entities\Collaborators\CollaboratorEntity;
 use Vertuoza\Libs\Exceptions\NotFoundException;
 use Vertuoza\Repositories\Collaborators\CollaboratorRepository;
 
-class CollaboratorByIdUseCase
+readonly class CollaboratorByIdUseCase
 {
 	public function __construct(
 		private CollaboratorRepository $repository,
