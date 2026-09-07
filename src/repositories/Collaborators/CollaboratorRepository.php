@@ -3,6 +3,8 @@
 namespace Vertuoza\Repositories\Collaborators;
 
 use Vertuoza\Entities\Collaborators\CollaboratorEntity;
+use Vertuoza\Repositories\Collaborators\Models\CollaboratorMapper;
+use Vertuoza\Repositories\Collaborators\Models\CollaboratorModel;
 use Vertuoza\Repositories\Database\QueryBuilder;
 
 class CollaboratorRepository
@@ -16,20 +18,17 @@ class CollaboratorRepository
 	{
 		$rows = $this->database
 			->getConnection()
-			->table('collaborator')
-			->where('tenant_id', $tenantId)
+			->table(CollaboratorModel::getTableName())
+			->where(CollaboratorModel::getTenantColumnName(), $tenantId)
 			->whereNull('deleted_at')
 			->get();
 
 		$collaborators = [];
 
 		foreach ($rows as $row) {
-			$collaborator = new CollaboratorEntity();
-			$collaborator->id = $row->id;
-			$collaborator->name = $row->name;
-			$collaborator->firstName = $row->first_name;
-
-			$collaborators[] = $collaborator;
+			$collaborators[] = CollaboratorMapper::modelToEntity(
+				CollaboratorModel::fromStdclass($row)
+			);
 		}
 
 		return $collaborators;
@@ -39,9 +38,9 @@ class CollaboratorRepository
 	{
 		$row = $this->database
 			->getConnection()
-			->table('collaborator')
-			->where('id', $id)
-			->where('tenant_id', $tenantId)
+			->table(CollaboratorModel::getTableName())
+			->where(CollaboratorModel::getPkColumnName(), $id)
+			->where(CollaboratorModel::getTenantColumnName(), $tenantId)
 			->whereNull('deleted_at')
 			->first();
 
@@ -49,11 +48,8 @@ class CollaboratorRepository
 			return null;
 		}
 
-		$collaborator = new CollaboratorEntity();
-		$collaborator->id = $row->id;
-		$collaborator->name = $row->name;
-		$collaborator->firstName = $row->first_name;
-
-		return $collaborator;
+		return CollaboratorMapper::modelToEntity(
+			CollaboratorModel::fromStdclass($row)
+		);
 	}
 }
