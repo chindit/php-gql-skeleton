@@ -2,10 +2,7 @@
 
 namespace Vertuoza\Api\Graphql\Resolvers;
 
-use GraphQL\Type\Definition\ListOfType;
-use GraphQL\Type\Definition\NonNull;
 use GraphQL\Type\Definition\ObjectType;
-use Vertuoza\Api\Graphql\Resolvers\Collaborators\Collaborator;
 use Vertuoza\Api\Graphql\Resolvers\Collaborators\CollaboratorQuery;
 use Vertuoza\Api\Graphql\Resolvers\Settings\UnitTypes\UnitTypeQuery;
 use Vertuoza\Api\Graphql\Types;
