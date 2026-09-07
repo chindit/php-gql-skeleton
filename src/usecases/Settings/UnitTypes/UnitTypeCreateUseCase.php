@@ -28,7 +28,7 @@ class UnitTypeCreateUseCase
 
 		$name = trim($name);
 
-		if (empty($name) || strlen($name) > 250) {
+		if (empty($name) || mb_strlen($name, 'UTF-8') > 250) {
 			throw new BadRequestException(
 				'Unit name must be between 1 and 250 characters long.'
 			);
