@@ -35,7 +35,7 @@ class UnitTypeRepository
           $query->where([UnitTypeModel::getTenantColumnName() => $tenantId])
             ->orWhere(UnitTypeModel::getTenantColumnName(), null);
         });
-      $query->whereNull('_deleted_at');
+      $query->whereNull('deleted_at');
       $query->whereIn(UnitTypeModel::getPkColumnName(), $ids);
 
       $entities = $query->get()->mapWithKeys(function ($row) {
@@ -112,13 +112,30 @@ class UnitTypeRepository
     )();
   }
 
-  public function create(UnitTypeMutationData $data, string $tenantId): int|string
-  {
-    $newId = $this->getQueryBuilder()->insertGetId(
-      UnitTypeMapper::serializeCreate($data, $tenantId)
-    );
-    return $newId;
-  }
+	public function create(
+		UnitTypeMutationData $data,
+		string $tenantId
+	): string {
+		/**
+		 * WARNING: MYSQL's lastInsertId returns the last auto_incremented id, NOT the last id generated.
+		 * Using default command will return 0 becaus no auto_increment was used. Therefore, there is no
+		 * way to retrieve the record, except by fetching by name.
+		 *
+		 * To avoid this, we pre-generate an UUID and use it as the primary key.
+		 */
+		$result = $this->db
+			->getConnection()
+			->selectOne('SELECT UUID() AS id');
+
+		$id = $result->id;
+
+		$values = UnitTypeMapper::serializeCreate($data, $tenantId);
+		$values['id'] = $id;
+
+		$this->getQueryBuilder()->insert($values);
+
+		return $id;
+	}
 
   public function update(string $id, UnitTypeMutationData $data)
   {
